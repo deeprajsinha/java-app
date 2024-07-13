@@ -1,0 +1,65 @@
+pipeline {
+    agent any
+    parameters {
+        string(name: 'APPLICATION_NAME', defaultValue: '', description: 'Application Name')
+        choice(name: 'VERTICAL', choices: ['Finance', 'Health', 'Education'], description: 'Select the Vertical')
+        choice(name: 'PLATFORM', choices: ['Windows', 'Linux', 'Mac'], description: 'Select the Platform')
+    }
+    stages {
+        stage('Update Jenkinsfile') {
+            steps {
+                script {
+                    // Define variables
+                    def templateRepoPath = "/var/www/html/Project/DEVOPS PROJECT/Testing"  // Path to the local directory of repo1
+                    def codeRepoPath = "/var/www/html/Project/DEVOPS/PROJECT/Testing/java-test-servie/"  // Path to the local directory of repo2
+                    def templateFile = "${templateRepoPath}/pipeline/jenkinsfile/Jenkinsfile"
+                    def appName = params.APPLICATION
+                    def vertical = params.VERTICAL
+                    def platform = params.PLATFORM
+                    def targetFile = "Jenkinsfile.${appName}"
+                    def targetDir = "${codeRepoPath}/app"
+
+                    // Create the shell script content
+                    def shellScript = """
+                        #!/bin/bash
+
+                        set -e  # Exit immediately if a command exits with a non-zero status
+
+                        # Ensure the template file exists
+                        if [ ! -f "${templateFile}" ]; then
+                            echo "Template file not found: ${templateFile}"
+                            exit 1
+                        fi
+
+                        # Replace the variable in the Jenkinsfile template
+                        sed "s/APPLICATION_NAME/${appName}/g" "${templateFile}" > "${targetFile}"
+
+                        # Ensure the target directory exists
+                        mkdir -p "${targetDir}"
+
+                        # Copy the modified APPLICATION_NAME to the target directory
+                        cp "${targetFile}" "${APPLICATION_NAME}"
+
+                        # Add, commit, and push the changes
+                        cd "${codeRepoPath}"
+                
+
+                        # Clean up
+                        rm -f "${targetFile}"
+
+                        echo "Jenkinsfile for ${appName} has been added to ${codeRepoPath}"
+                    """
+
+                    // Write the shell script to a file
+                    writeFile file: 'APPLICATION_NAME.sh', text: shellScript
+
+                    // Make the script executable
+                    sh 'chmod +x APPLICATION_NAME.sh'
+
+                    // Run the shell script
+                    sh './APPLICATION_NAME.sh'
+                }
+            }
+        }
+    }
+}
